@@ -36,7 +36,7 @@ services:
           name: meshtools-api
           property: host
 
-  # 3. Managed Redis Instance (Moved under services)
+  # 3. Managed Redis Instance
   - type: redis
     name: meshtools-cache
     plan: free

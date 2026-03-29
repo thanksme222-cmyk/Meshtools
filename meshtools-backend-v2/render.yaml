@@ -1,0 +1,46 @@
+services:
+  # 1. The Web Service (API)
+  - type: web
+    name: meshtools-api
+    runtime: node
+    plan: standard
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: meshtools-cache
+          property: connectionString
+      - key: FRONTEND_URL
+        value: https://meshtools.org
+      - key: PORT
+        value: 10000 # Render's default, matches process.env.PORT
+
+  # 2. The Background Worker (BullMQ Consumer)
+  - type: worker
+    name: meshtools-worker
+    runtime: node
+    plan: standard # Use 'standard' to get more CPU for Draco compression
+    buildCommand: npm install
+    startCommand: node worker.js
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: meshtools-cache
+          property: connectionString
+      - key: BACKEND_URL # Critical for generating download links in worker.js
+        fromService:
+          type: web
+          name: meshtools-api
+          property: host
+
+# 3. Managed Redis Instance
+databases:
+  - name: meshtools-cache
+    type: redis
+    plan: free 
+    ipAllowList: [] # Security: Only internal services can see the queue
